@@ -1,0 +1,1347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FieldSafe — Safety App (Vanilla)</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#121a33;
+      --panel2:#0f1730;
+      --text:#e8ecff;
+      --muted:#b7c0ffcc;
+      --border:#2a3766;
+      --good:#2ecc71;
+      --warn:#f1c40f;
+      --bad:#ff5c7a;
+      --accent:#7aa2ff;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(122,162,255,.25), transparent 55%),
+                  radial-gradient(900px 600px at 90% 10%, rgba(255,92,122,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit}
+    header{
+      padding:18px 18px 10px;
+      position:sticky; top:0;
+      background: linear-gradient(to bottom, rgba(11,16,32,.92), rgba(11,16,32,.55));
+      backdrop-filter: blur(8px);
+      z-index:10;
+      border-bottom:1px solid rgba(42,55,102,.45);
+    }
+    .row{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+    .brand{
+      display:flex; gap:10px; align-items:center;
+      font-weight:800; letter-spacing:.2px;
+    }
+    .logo{
+      width:36px; height:36px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(122,162,255,.95), rgba(255,92,122,.85));
+      box-shadow: var(--shadow);
+      display:grid; place-items:center;
+      font-weight:900;
+    }
+    .sub{color:var(--muted); font-size:12px; margin-top:2px}
+    .pill{
+      padding:8px 10px; border:1px solid rgba(42,55,102,.7);
+      border-radius:999px; background:rgba(18,26,51,.65);
+      display:flex; gap:8px; align-items:center; color:var(--muted);
+      font-size:12px;
+    }
+    .wrap{max-width:1080px; margin:0 auto; padding:14px 18px 40px}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(18,26,51,.92), rgba(15,23,48,.92));
+      border:1px solid rgba(42,55,102,.65);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card h2, .card h3{
+      margin:0; padding:14px 14px 10px;
+      font-size:15px;
+      letter-spacing:.2px;
+    }
+    .card .body{padding: 0 14px 14px}
+    .tabs{
+      display:flex; gap:8px; padding:10px 14px 14px;
+      border-bottom:1px solid rgba(42,55,102,.55);
+      flex-wrap:wrap;
+    }
+    .tab{
+      border:1px solid rgba(42,55,102,.75);
+      background: rgba(18,26,51,.6);
+      color: var(--muted);
+      padding:9px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      user-select:none;
+      font-size:12px;
+    }
+    .tab[aria-selected="true"]{
+      background: rgba(122,162,255,.18);
+      border-color: rgba(122,162,255,.65);
+      color: var(--text);
+    }
+    .panel{display:none}
+    .panel.active{display:block}
+    .kpi{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:10px;
+      padding: 0 14px 14px;
+    }
+    @media (max-width: 800px){ .kpi{grid-template-columns: repeat(2, minmax(0, 1fr));} }
+    .k{
+      border:1px solid rgba(42,55,102,.6);
+      background: rgba(18,26,51,.5);
+      border-radius: 14px;
+      padding:10px 10px;
+    }
+    .k .label{font-size:11px; color:var(--muted)}
+    .k .val{font-size:18px; font-weight:800; margin-top:6px}
+    .btn{
+      border:1px solid rgba(42,55,102,.8);
+      background: rgba(18,26,51,.65);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .btn:hover{filter:brightness(1.05)}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(122,162,255,.95), rgba(122,162,255,.55));
+      border-color: rgba(122,162,255,.75);
+      color:#06102a;
+    }
+    .btn.danger{
+      background: linear-gradient(135deg, rgba(255,92,122,.95), rgba(255,92,122,.55));
+      border-color: rgba(255,92,122,.75);
+      color:#20030a;
+    }
+    .btn.ghost{
+      background: transparent;
+      border-color: rgba(42,55,102,.8);
+      color: var(--muted);
+    }
+    .btn.small{padding:8px 10px; border-radius: 11px; font-size:12px}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
+    .stack{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .sep{height:1px; background: rgba(42,55,102,.55); margin:12px 0}
+    label{display:block; font-size:12px; color: var(--muted); margin:10px 0 6px}
+    input, select, textarea{
+      width:100%;
+      padding:10px 10px;
+      border-radius: 12px;
+      border:1px solid rgba(42,55,102,.8);
+      background: rgba(11,16,32,.35);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{min-height: 96px; resize: vertical}
+    .two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    @media (max-width: 700px){ .two{grid-template-columns:1fr} }
+    .list{display:flex; flex-direction:column; gap:10px}
+    .item{
+      border:1px solid rgba(42,55,102,.6);
+      background: rgba(18,26,51,.45);
+      border-radius: 14px;
+      padding:10px;
+    }
+    .item .top{display:flex; gap:10px; justify-content:space-between; align-items:flex-start}
+    .item .title{font-weight:800}
+    .item .meta{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.35}
+    .badge{
+      font-size:11px; font-weight:800;
+      padding:6px 8px; border-radius:999px;
+      border:1px solid rgba(42,55,102,.8);
+      background: rgba(11,16,32,.35);
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    .badge.good{border-color: rgba(46,204,113,.6); background: rgba(46,204,113,.12); color: rgba(190,255,220,.95)}
+    .badge.warn{border-color: rgba(241,196,15,.6); background: rgba(241,196,15,.10); color: rgba(255,244,203,.95)}
+    .badge.bad{border-color: rgba(255,92,122,.65); background: rgba(255,92,122,.12); color: rgba(255,214,224,.95)}
+    .checkrow{display:flex; gap:10px; align-items:flex-start}
+    .checkrow input[type="checkbox"]{width:20px; height:20px; margin-top:2px}
+    .hint{font-size:12px; color:var(--muted); line-height:1.4}
+    .toast{
+      position: fixed;
+      left:50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      background: rgba(18,26,51,.92);
+      border: 1px solid rgba(42,55,102,.8);
+      box-shadow: var(--shadow);
+      border-radius: 999px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 12px;
+      display:none;
+      z-index: 100;
+    }
+    .toast.show{display:block}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .dangerBox{
+      border:1px solid rgba(255,92,122,.45);
+      background: rgba(255,92,122,.08);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .goodBox{
+      border:1px solid rgba(46,204,113,.35);
+      background: rgba(46,204,113,.07);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .linkish{
+      background:none; border:none; padding:0;
+      color: var(--accent); cursor:pointer; font-weight:700;
+      text-decoration: underline;
+    }
+    .photo{
+      width:100%;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid rgba(42,55,102,.7);
+      margin-top:10px;
+      display:none;
+    }
+    .footerNote{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="row" style="max-width:1080px;margin:0 auto;">
+      <div>
+        <div class="brand">
+          <div class="logo">FS</div>
+          <div>
+            <div>FieldSafe</div>
+            <div class="sub">Quick safety checks, observations, and incident notes — stored locally</div>
+          </div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="pill" title="Data stays on this device (localStorage)">
+          <span>📱</span><span>Local-only</span>
+        </div>
+        <button class="btn danger" id="stopWorkBtn" title="Stop work / escalate">
+          ⛔ Stop Work
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="grid">
+      <!-- Main -->
+      <section class="card" aria-label="Main">
+        <div class="tabs" role="tablist" aria-label="FieldSafe tabs">
+          <button class="tab" role="tab" aria-selected="true" data-tab="checklist">✅ Checklist</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="observe">👀 Observation</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="incident">🧾 Incident</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="brief">🗣️ Briefing</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="resources">📚 Resources</button>
+        </div>
+
+        <!-- Checklist -->
+        <div class="panel active" id="panel-checklist">
+          <h2>Daily Safety Checklist</h2>
+          <div class="body">
+            <div class="two">
+              <div>
+                <label for="siteName">Site / Project</label>
+                <input id="siteName" placeholder="e.g., Project Kansas — Area B" />
+              </div>
+              <div>
+                <label for="crew">Crew / Trade</label>
+                <input id="crew" placeholder="e.g., Concrete / MEP / GC" />
+              </div>
+            </div>
+
+            <div class="two">
+              <div>
+                <label for="weather">Weather / Conditions</label>
+                <input id="weather" placeholder="e.g., Clear, high winds, rain, heat" />
+              </div>
+              <div>
+                <label for="shift">Shift</label>
+                <select id="shift">
+                  <option value="Day">Day</option>
+                  <option value="Swing">Swing</option>
+                  <option value="Night">Night</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="stack" style="justify-content:space-between">
+              <div class="hint">Check items as you verify. Add custom items for your site.</div>
+              <div class="stack">
+                <button class="btn small" id="resetChecklistBtn">Reset</button>
+                <button class="btn small primary" id="saveChecklistBtn">Save</button>
+              </div>
+            </div>
+
+            <div style="margin-top:10px" class="list" id="checklistList"></div>
+
+            <div class="sep"></div>
+
+            <div class="two">
+              <div>
+                <label for="newChecklistItem">Add custom checklist item</label>
+                <input id="newChecklistItem" placeholder="e.g., Verify edge protection at Level 3 perimeter" />
+              </div>
+              <div style="align-self:end">
+                <button class="btn primary" id="addChecklistBtn">Add Item</button>
+              </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="stack">
+              <button class="btn" id="exportDataBtn">Export Data (.json)</button>
+              <button class="btn ghost" id="importDataBtn">Import Data</button>
+              <input id="importFile" type="file" accept="application/json" style="display:none" />
+              <button class="btn ghost" id="clearAllBtn" title="Clears all saved data on this device">Clear All Local Data</button>
+            </div>
+
+            <div class="footerNote">
+              Tip: Export at the end of the day to attach to an email or upload to a project system.
+            </div>
+          </div>
+        </div>
+
+        <!-- Observation -->
+        <div class="panel" id="panel-observe">
+          <h2>Safety Observation</h2>
+          <div class="body">
+            <div class="two">
+              <div>
+                <label for="obsType">Type</label>
+                <select id="obsType">
+                  <option value="Hazard">Hazard</option>
+                  <option value="Near Miss">Near Miss</option>
+                  <option value="Good Catch">Good Catch</option>
+                  <option value="Positive Practice">Positive Practice</option>
+                </select>
+              </div>
+              <div>
+                <label for="obsRisk">Risk Level</label>
+                <select id="obsRisk">
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+            </div>
+
+            <label for="obsLocation">Location</label>
+            <input id="obsLocation" placeholder="e.g., Level 2 — East stair tower" />
+
+            <label for="obsDesc">What did you see?</label>
+            <textarea id="obsDesc" placeholder="Describe the condition, behavior, or situation."></textarea>
+
+            <label for="obsAction">Immediate action taken</label>
+            <textarea id="obsAction" placeholder="e.g., Stopped work, corrected housekeeping, re-briefed PPE requirements."></textarea>
+
+            <label for="obsPhoto">Photo (optional)</label>
+            <input id="obsPhoto" type="file" accept="image/*" />
+            <img id="obsPreview" class="photo" alt="Observation photo preview" />
+
+            <div class="sep"></div>
+
+            <div class="stack">
+              <button class="btn primary" id="saveObsBtn">Save Observation</button>
+              <button class="btn" id="clearObsFormBtn">Clear</button>
+            </div>
+
+            <div class="sep"></div>
+            <h3 style="padding:0 0 8px; margin:0">Recent Observations</h3>
+            <div class="list" id="obsList"></div>
+          </div>
+        </div>
+
+        <!-- Incident -->
+        <div class="panel" id="panel-incident">
+          <h2>Incident Note</h2>
+          <div class="body">
+            <div class="dangerBox">
+              <div style="font-weight:800;margin-bottom:6px">If there’s an emergency</div>
+              <div class="hint">Call site emergency response / 911 per your project plan. This app does not notify anyone automatically.</div>
+            </div>
+
+            <div class="two" style="margin-top:10px">
+              <div>
+                <label for="incCategory">Category</label>
+                <select id="incCategory">
+                  <option value="First Aid">First Aid</option>
+                  <option value="Medical Treatment">Medical Treatment</option>
+                  <option value="Near Miss">Near Miss</option>
+                  <option value="Property Damage">Property Damage</option>
+                  <option value="Recordable">Recordable</option>
+                  <option value="Environmental">Environmental</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label for="incSeverity">Severity</label>
+                <select id="incSeverity">
+                  <option value="Minor">Minor</option>
+                  <option value="Moderate">Moderate</option>
+                  <option value="Severe">Severe</option>
+                </select>
+              </div>
+            </div>
+
+            <label for="incLocation">Location</label>
+            <input id="incLocation" placeholder="e.g., Loading dock — Gate 2" />
+
+            <div class="two">
+              <div>
+                <label for="incTime">Time of incident</label>
+                <input id="incTime" type="datetime-local" />
+              </div>
+              <div>
+                <label for="incPeople">People involved (names/roles)</label>
+                <input id="incPeople" placeholder="e.g., John D. (Electrician), Spotter" />
+              </div>
+            </div>
+
+            <label for="incSummary">What happened?</label>
+            <textarea id="incSummary" placeholder="Be factual: sequence of events, conditions, equipment, etc."></textarea>
+
+            <label for="incImmediate">Immediate response</label>
+            <textarea id="incImmediate" placeholder="e.g., Provided first aid, secured area, notified supervision."></textarea>
+
+            <label for="incNext">Follow-up / corrective actions</label>
+            <textarea id="incNext" placeholder="e.g., Retraining, JHA update, equipment inspection, barriers."></textarea>
+
+            <div class="sep"></div>
+            <div class="stack">
+              <button class="btn primary" id="saveIncBtn">Save Incident</button>
+              <button class="btn" id="clearIncFormBtn">Clear</button>
+            </div>
+
+            <div class="sep"></div>
+            <h3 style="padding:0 0 8px; margin:0">Saved Incidents</h3>
+            <div class="list" id="incList"></div>
+          </div>
+        </div>
+
+        <!-- Briefing -->
+        <div class="panel" id="panel-brief">
+          <h2>Toolbox Talk / Pre-Task Brief</h2>
+          <div class="body">
+            <div class="two">
+              <div>
+                <label for="briefTopic">Topic</label>
+                <select id="briefTopic">
+                  <option value="Working at Heights">Working at Heights</option>
+                  <option value="Lifting & Rigging">Lifting & Rigging</option>
+                  <option value="Hot Work">Hot Work</option>
+                  <option value="Electrical Safety / LOTO">Electrical Safety / LOTO</option>
+                  <option value="Excavation / Trenching">Excavation / Trenching</option>
+                  <option value="Mobile Equipment / Spotting">Mobile Equipment / Spotting</option>
+                  <option value="Housekeeping / Slips Trips Falls">Housekeeping / Slips Trips Falls</option>
+                  <option value="Heat Stress">Heat Stress</option>
+                  <option value="Confined Spaces">Confined Spaces</option>
+                  <option value="Custom">Custom</option>
+                </select>
+              </div>
+              <div>
+                <label for="briefAudience">Audience</label>
+                <input id="briefAudience" placeholder="e.g., Concrete crew, MEP rough-in" />
+              </div>
+            </div>
+
+            <label for="briefCustom" id="briefCustomLabel" style="display:none">Custom topic</label>
+            <input id="briefCustom" style="display:none" placeholder="Enter custom topic" />
+
+            <div class="two">
+              <div>
+                <label for="briefTask">Task being performed</label>
+                <input id="briefTask" placeholder="e.g., Install cable tray at Level 4" />
+              </div>
+              <div>
+                <label for="briefArea">Work area</label>
+                <input id="briefArea" placeholder="e.g., North corridor" />
+              </div>
+            </div>
+
+            <label for="briefNotes">Site-specific notes</label>
+            <textarea id="briefNotes" placeholder="Add project-specific hazards, constraints, or rules."></textarea>
+
+            <div class="sep"></div>
+            <div class="stack">
+              <button class="btn primary" id="genBriefBtn">Generate Briefing</button>
+              <button class="btn" id="copyBriefBtn" disabled>Copy</button>
+              <button class="btn ghost" id="saveBriefBtn" disabled>Save</button>
+            </div>
+
+            <label for="briefOut">Generated briefing</label>
+            <textarea id="briefOut" class="mono" placeholder="Generated text will appear here..." readonly></textarea>
+
+            <div class="sep"></div>
+            <h3 style="padding:0 0 8px; margin:0">Saved Briefings</h3>
+            <div class="list" id="briefList"></div>
+          </div>
+        </div>
+
+        <!-- Resources -->
+        <div class="panel" id="panel-resources">
+          <h2>Quick Resources</h2>
+          <div class="body">
+            <div class="goodBox">
+              <div style="font-weight:800;margin-bottom:6px">Stop Work Authority</div>
+              <div class="hint">
+                Anyone can stop work if they see an unsafe condition. Pause. Control the hazard. Escalate to supervision.
+              </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="two">
+              <div>
+                <h3 style="padding:0 0 8px; margin:0">Emergency Contacts</h3>
+                <div class="hint">Edit these for your project. “Call” uses your phone dialer.</div>
+                <div class="sep"></div>
+
+                <label>Primary</label>
+                <input id="c1name" placeholder="Name / Role (e.g., Safety Manager)" />
+                <input id="c1phone" placeholder="Phone (e.g., +1-555-555-5555)" style="margin-top:8px"/>
+
+                <label>Secondary</label>
+                <input id="c2name" placeholder="Name / Role" />
+                <input id="c2phone" placeholder="Phone" style="margin-top:8px"/>
+
+                <div class="sep"></div>
+                <div class="stack">
+                  <button class="btn primary" id="saveContactsBtn">Save Contacts</button>
+                  <a class="btn" id="callPrimaryBtn" href="tel:" role="button">Call Primary</a>
+                  <a class="btn" id="callSecondaryBtn" href="tel:" role="button">Call Secondary</a>
+                </div>
+              </div>
+
+              <div>
+                <h3 style="padding:0 0 8px; margin:0">Hazard Reference</h3>
+                <div class="hint">Fast reminders (not a substitute for your company program / policy).</div>
+                <div class="sep"></div>
+                <div id="hazards"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Sidebar -->
+      <aside class="card" aria-label="Summary">
+        <h2>Today’s Snapshot</h2>
+        <div class="kpi" id="kpi"></div>
+        <div class="body">
+          <div class="sep"></div>
+          <h3 style="padding:0 0 8px; margin:0">Recent Activity</h3>
+          <div class="hint">Most recent saves across checklist, observations, incidents, briefings.</div>
+          <div style="margin-top:10px" class="list" id="activityList"></div>
+          <div class="sep"></div>
+          <div class="hint">
+            Data is stored in <span class="mono">localStorage</span> on this device. Use <b>Export</b> to move it elsewhere.
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+    const uid = () => Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
+
+    const nowISO = () => {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2,"0");
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    const fmt = (ms) => {
+      const d = new Date(ms);
+      return d.toLocaleString([], {year:"numeric", month:"short", day:"2-digit", hour:"2-digit", minute:"2-digit"});
+    };
+
+    const toast = (msg) => {
+      const t = $("#toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => t.classList.remove("show"), 2200);
+    };
+
+    const dl = (filename, text) => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], {type:"application/json"}));
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    };
+
+    // ---------- Storage ----------
+    const KEY = "fieldsafe.v1";
+    const DEFAULT_CHECKLIST = [
+      "Pre-task plan reviewed (scope, sequence, roles)",
+      "JHA / AHA reviewed and understood",
+      "PPE verified (head/eye/hand/foot + task-specific)",
+      "Work area inspected (housekeeping, access/egress)",
+      "Fall protection in place where required",
+      "Tools/equipment inspected (guards, cords, tags)",
+      "Barricades/signage placed as needed",
+      "Ladders/scaffolds inspected and set correctly",
+      "LOTO / energy isolation verified (if applicable)",
+      "Spotter / traffic plan in place (if applicable)",
+      "Weather/heat/cold plan considered (if applicable)",
+      "Emergency route / muster point confirmed"
+    ];
+
+    const emptyState = () => ({
+      profile: {
+        siteName: "",
+        crew: "",
+        weather: "",
+        shift: "Day",
+      },
+      checklist: DEFAULT_CHECKLIST.map(t => ({ id: uid(), text: t, done: false, pinned: false })),
+      observations: [],
+      incidents: [],
+      briefings: [],
+      contacts: { c1name:"", c1phone:"", c2name:"", c2phone:"" },
+      activity: []
+    });
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        if(!raw) return emptyState();
+        const parsed = JSON.parse(raw);
+
+        // gentle migrations / defaults
+        const st = Object.assign(emptyState(), parsed);
+        if(!Array.isArray(st.checklist) || st.checklist.length === 0) st.checklist = emptyState().checklist;
+        if(!Array.isArray(st.activity)) st.activity = [];
+        if(!st.profile) st.profile = emptyState().profile;
+        if(!st.contacts) st.contacts = emptyState().contacts;
+        return st;
+      }catch(e){
+        console.warn(e);
+        return emptyState();
+      }
+    }
+
+    function saveState(){
+      localStorage.setItem(KEY, JSON.stringify(state));
+      renderAll();
+    }
+
+    function pushActivity(kind, label){
+      state.activity.unshift({ id: uid(), ts: Date.now(), kind, label });
+      state.activity = state.activity.slice(0, 12);
+    }
+
+    let state = loadState();
+
+    // ---------- Tabs ----------
+    $$(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        $$(".tab").forEach(b => b.setAttribute("aria-selected","false"));
+        btn.setAttribute("aria-selected","true");
+        const tab = btn.dataset.tab;
+        $$(".panel").forEach(p => p.classList.remove("active"));
+        $("#panel-" + tab).classList.add("active");
+      });
+    });
+
+    // ---------- Checklist ----------
+    function renderChecklist(){
+      $("#siteName").value = state.profile.siteName || "";
+      $("#crew").value = state.profile.crew || "";
+      $("#weather").value = state.profile.weather || "";
+      $("#shift").value = state.profile.shift || "Day";
+
+      const list = $("#checklistList");
+      list.innerHTML = "";
+
+      const sorted = [...state.checklist].sort((a,b) => (b.pinned - a.pinned) || (a.done - b.done));
+      for(const it of sorted){
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="checkrow">
+            <input type="checkbox" ${it.done ? "checked":""} aria-label="Mark complete">
+            <div style="flex:1">
+              <div class="top">
+                <div>
+                  <div class="title">${escapeHTML(it.text)}</div>
+                  <div class="meta">${it.pinned ? "📌 Pinned • " : ""}${it.done ? "Completed" : "Pending"}</div>
+                </div>
+                <div class="stack">
+                  <button class="btn small ghost" data-act="pin">${it.pinned ? "Unpin" : "Pin"}</button>
+                  <button class="btn small" data-act="edit">Edit</button>
+                  <button class="btn small" data-act="del">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        const cb = el.querySelector('input[type="checkbox"]');
+        cb.addEventListener("change", () => {
+          it.done = cb.checked;
+          saveState();
+        });
+
+        el.querySelector('[data-act="pin"]').addEventListener("click", () => {
+          it.pinned = !it.pinned;
+          saveState();
+        });
+
+        el.querySelector('[data-act="edit"]').addEventListener("click", () => {
+          const next = prompt("Edit checklist item:", it.text);
+          if(next === null) return;
+          const trimmed = next.trim();
+          if(!trimmed) return toast("Item can't be empty.");
+          it.text = trimmed;
+          saveState();
+          toast("Checklist updated.");
+        });
+
+        el.querySelector('[data-act="del"]').addEventListener("click", () => {
+          if(!confirm("Delete this checklist item?")) return;
+          state.checklist = state.checklist.filter(x => x.id !== it.id);
+          saveState();
+          toast("Checklist item deleted.");
+        });
+
+        list.appendChild(el);
+      }
+    }
+
+    $("#addChecklistBtn").addEventListener("click", () => {
+      const txt = $("#newChecklistItem").value.trim();
+      if(!txt) return toast("Enter an item first.");
+      state.checklist.unshift({ id: uid(), text: txt, done:false, pinned:true });
+      $("#newChecklistItem").value = "";
+      pushActivity("Checklist", "Added checklist item");
+      saveState();
+      toast("Added.");
+    });
+
+    $("#saveChecklistBtn").addEventListener("click", () => {
+      state.profile.siteName = $("#siteName").value.trim();
+      state.profile.crew = $("#crew").value.trim();
+      state.profile.weather = $("#weather").value.trim();
+      state.profile.shift = $("#shift").value;
+      pushActivity("Checklist", "Saved daily checklist header");
+      saveState();
+      toast("Checklist saved.");
+    });
+
+    $("#resetChecklistBtn").addEventListener("click", () => {
+      if(!confirm("Reset all checklist checkmarks (keeps items)?")) return;
+      state.checklist.forEach(i => i.done = false);
+      pushActivity("Checklist", "Reset checklist");
+      saveState();
+      toast("Reset.");
+    });
+
+    // ---------- Observations ----------
+    let obsPhotoDataURL = ""; // stored in-memory only to avoid bloating localStorage
+
+    $("#obsPhoto").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      obsPhotoDataURL = "";
+      $("#obsPreview").style.display = "none";
+      if(!f) return;
+      const maxMB = 1.2; // keep reasonable
+      if(f.size > maxMB * 1024 * 1024){
+        toast(`Photo too large (${(f.size/1024/1024).toFixed(1)}MB). Use a smaller image.`);
+        e.target.value = "";
+        return;
+      }
+      obsPhotoDataURL = await fileToDataURL(f);
+      $("#obsPreview").src = obsPhotoDataURL;
+      $("#obsPreview").style.display = "block";
+    });
+
+    $("#saveObsBtn").addEventListener("click", () => {
+      const obs = {
+        id: uid(),
+        ts: Date.now(),
+        type: $("#obsType").value,
+        risk: $("#obsRisk").value,
+        location: $("#obsLocation").value.trim(),
+        desc: $("#obsDesc").value.trim(),
+        action: $("#obsAction").value.trim(),
+        photo: obsPhotoDataURL || "" // note: storing small base64 only
+      };
+      if(!obs.location || !obs.desc) return toast("Add location and description.");
+      state.observations.unshift(obs);
+      state.observations = state.observations.slice(0, 40);
+      pushActivity("Observation", `${obs.type} (${obs.risk})`);
+      clearObsForm();
+      saveState();
+      toast("Observation saved.");
+    });
+
+    function clearObsForm(){
+      $("#obsType").value = "Hazard";
+      $("#obsRisk").value = "Low";
+      $("#obsLocation").value = "";
+      $("#obsDesc").value = "";
+      $("#obsAction").value = "";
+      $("#obsPhoto").value = "";
+      obsPhotoDataURL = "";
+      $("#obsPreview").style.display = "none";
+      $("#obsPreview").src = "";
+    }
+
+    $("#clearObsFormBtn").addEventListener("click", clearObsForm);
+
+    function renderObservations(){
+      const list = $("#obsList");
+      list.innerHTML = "";
+      if(state.observations.length === 0){
+        list.innerHTML = `<div class="hint">No observations yet.</div>`;
+        return;
+      }
+
+      for(const o of state.observations){
+        const badge = o.type === "Good Catch" || o.type === "Positive Practice"
+          ? "good"
+          : (o.risk === "High" ? "bad" : (o.risk === "Medium" ? "warn" : ""));
+
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="top">
+            <div>
+              <div class="title">${escapeHTML(o.type)} — ${escapeHTML(o.location)}</div>
+              <div class="meta">${fmt(o.ts)} • Risk: ${escapeHTML(o.risk)}</div>
+            </div>
+            <div class="stack">
+              <span class="badge ${badge}">${escapeHTML(o.risk)}</span>
+              <button class="btn small" data-act="del">Delete</button>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="hint"><b>Observed:</b> ${escapeHTML(o.desc)}</div>
+          ${o.action ? `<div class="hint" style="margin-top:6px"><b>Action:</b> ${escapeHTML(o.action)}</div>` : ""}
+          ${o.photo ? `<img class="photo" style="display:block" alt="Saved observation photo" src="${o.photo}">` : ""}
+        `;
+        el.querySelector('[data-act="del"]').addEventListener("click", () => {
+          if(!confirm("Delete this observation?")) return;
+          state.observations = state.observations.filter(x => x.id !== o.id);
+          pushActivity("Observation", "Deleted observation");
+          saveState();
+          toast("Deleted.");
+        });
+        list.appendChild(el);
+      }
+    }
+
+    // ---------- Incidents ----------
+    $("#incTime").value = nowISO();
+
+    $("#saveIncBtn").addEventListener("click", () => {
+      const it = {
+        id: uid(),
+        ts: Date.now(),
+        category: $("#incCategory").value,
+        severity: $("#incSeverity").value,
+        location: $("#incLocation").value.trim(),
+        time: $("#incTime").value || "",
+        people: $("#incPeople").value.trim(),
+        summary: $("#incSummary").value.trim(),
+        immediate: $("#incImmediate").value.trim(),
+        next: $("#incNext").value.trim()
+      };
+      if(!it.location || !it.summary) return toast("Add location and what happened.");
+      state.incidents.unshift(it);
+      state.incidents = state.incidents.slice(0, 40);
+      pushActivity("Incident", `${it.category} (${it.severity})`);
+      clearIncForm();
+      saveState();
+      toast("Incident saved.");
+    });
+
+    function clearIncForm(){
+      $("#incCategory").value = "First Aid";
+      $("#incSeverity").value = "Minor";
+      $("#incLocation").value = "";
+      $("#incTime").value = nowISO();
+      $("#incPeople").value = "";
+      $("#incSummary").value = "";
+      $("#incImmediate").value = "";
+      $("#incNext").value = "";
+    }
+
+    $("#clearIncFormBtn").addEventListener("click", clearIncForm);
+
+    function renderIncidents(){
+      const list = $("#incList");
+      list.innerHTML = "";
+      if(state.incidents.length === 0){
+        list.innerHTML = `<div class="hint">No incidents saved.</div>`;
+        return;
+      }
+
+      for(const i of state.incidents){
+        const badge = i.severity === "Severe" ? "bad" : (i.severity === "Moderate" ? "warn" : "");
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="top">
+            <div>
+              <div class="title">${escapeHTML(i.category)} — ${escapeHTML(i.location)}</div>
+              <div class="meta">${fmt(i.ts)} • Severity: ${escapeHTML(i.severity)} ${i.time ? `• Incident time: ${escapeHTML(i.time)}` : ""}</div>
+            </div>
+            <div class="stack">
+              <span class="badge ${badge}">${escapeHTML(i.severity)}</span>
+              <button class="btn small" data-act="export">Export</button>
+              <button class="btn small" data-act="del">Delete</button>
+            </div>
+          </div>
+          <div class="sep"></div>
+          ${i.people ? `<div class="hint"><b>People:</b> ${escapeHTML(i.people)}</div>` : ""}
+          <div class="hint" style="margin-top:6px"><b>Summary:</b> ${escapeHTML(i.summary)}</div>
+          ${i.immediate ? `<div class="hint" style="margin-top:6px"><b>Immediate:</b> ${escapeHTML(i.immediate)}</div>` : ""}
+          ${i.next ? `<div class="hint" style="margin-top:6px"><b>Follow-up:</b> ${escapeHTML(i.next)}</div>` : ""}
+        `;
+        el.querySelector('[data-act="del"]').addEventListener("click", () => {
+          if(!confirm("Delete this incident?")) return;
+          state.incidents = state.incidents.filter(x => x.id !== i.id);
+          pushActivity("Incident", "Deleted incident");
+          saveState();
+          toast("Deleted.");
+        });
+        el.querySelector('[data-act="export"]').addEventListener("click", () => {
+          const out = JSON.stringify(i, null, 2);
+          dl(`incident-${i.id}.json`, out);
+          toast("Exported.");
+        });
+        list.appendChild(el);
+      }
+    }
+
+    // ---------- Briefings ----------
+    const TOPIC_LIBRARY = {
+      "Working at Heights": [
+        "Verify 100% tie-off where required; inspect harness/lanyard",
+        "Confirm anchor points and swing-fall clearances",
+        "Control dropped objects (tool lanyards, toe boards, exclusion zones)",
+        "Inspect ladders/scaffolds; maintain 3 points of contact"
+      ],
+      "Lifting & Rigging": [
+        "Pre-lift meeting: roles, signals, lift path, exclusion zone",
+        "Inspect rigging (tags, capacity, damage); verify pick points",
+        "Use qualified operator/riggers; control load with tag lines",
+        "Stop if weather/wind compromises control"
+      ],
+      "Hot Work": [
+        "Hot work permit active (if required); fire watch assigned",
+        "Remove combustibles / protect surfaces; maintain extinguishers",
+        "Verify gas cylinders secured and hoses/regulators in good condition",
+        "Post-work fire watch duration per plan"
+      ],
+      "Electrical Safety / LOTO": [
+        "Confirm de-energization; test-before-touch",
+        "LOTO applied by authorized personnel; verify boundaries",
+        "Use GFCI and inspect cords/tools; keep panels closed",
+        "Maintain clear access around electrical equipment"
+      ],
+      "Excavation / Trenching": [
+        "Locate utilities; pothole where needed; control access",
+        "Competent person inspection; protective system in place",
+        "Spoils and equipment setback; ladder within 25 ft",
+        "Atmospheric testing if required; water control"
+      ],
+      "Mobile Equipment / Spotting": [
+        "Define travel paths; establish exclusion zones",
+        "Assign trained spotter; agree on signals and radio channel",
+        "Use backup alarms and lights; avoid blind spots",
+        "No walking under suspended loads / near swing radius"
+      ],
+      "Housekeeping / Slips Trips Falls": [
+        "Keep pathways clear; manage cords/hoses; clean spills",
+        "Maintain lighting; mark elevation changes",
+        "Use proper footwear; keep stairs/ramps clear",
+        "Dispose scrap promptly; keep materials stacked safely"
+      ],
+      "Heat Stress": [
+        "Hydration plan; shaded breaks; acclimatization",
+        "Monitor symptoms (cramps, dizziness, confusion)",
+        "Buddy system; adjust schedule for peak heat",
+        "Electrolytes as appropriate; emergency response plan"
+      ],
+      "Confined Spaces": [
+        "Permit and atmospheric monitoring as required",
+        "Attendant in place; communications established",
+        "Rescue plan and equipment available",
+        "Control energy sources (LOTO), ventilation, entry log"
+      ],
+      "Custom": []
+    };
+
+    $("#briefTopic").addEventListener("change", () => {
+      const custom = $("#briefTopic").value === "Custom";
+      $("#briefCustom").style.display = custom ? "block" : "none";
+      $("#briefCustomLabel").style.display = custom ? "block" : "none";
+    });
+
+    $("#genBriefBtn").addEventListener("click", () => {
+      const topicSel = $("#briefTopic").value;
+      const topic = topicSel === "Custom" ? $("#briefCustom").value.trim() : topicSel;
+      if(!topic) return toast("Enter a topic.");
+      const audience = $("#briefAudience").value.trim() || "Crew";
+      const task = $("#briefTask").value.trim() || "Today’s planned task";
+      const area = $("#briefArea").value.trim() || "Work area";
+      const notes = $("#briefNotes").value.trim();
+
+      const bullets = TOPIC_LIBRARY[topicSel] || [];
+      const lines = [];
+      lines.push(`TOOLBOX TALK / PRE-TASK BRIEF`);
+      lines.push(`Topic: ${topic}`);
+      lines.push(`Audience: ${audience}`);
+      lines.push(`Task: ${task}`);
+      lines.push(`Area: ${area}`);
+      lines.push(`Time: ${new Date().toLocaleString()}`);
+      lines.push(``);
+      lines.push(`Key hazards & controls:`);
+      if(bullets.length){
+        bullets.forEach((b, idx) => lines.push(`  ${idx+1}. ${b}`));
+      } else {
+        lines.push(`  1. Identify primary hazards (energy, height, pinch points, struck-by, slip/trip)`);
+        lines.push(`  2. Confirm controls (PPE, barriers, spotter, permits, LOTO, sequencing)`);
+        lines.push(`  3. Define stop-work triggers and escalation path`);
+      }
+      lines.push(``);
+      lines.push(`Stop-work triggers:`);
+      lines.push(`  • Missing/failed controls (guardrails removed, LOTO unclear, exclusion zone breached)`);
+      lines.push(`  • Changing conditions (weather, congestion, new trades, unexpected utilities)`);
+      lines.push(`  • Unclear roles/communications`);
+      lines.push(``);
+      if(notes){
+        lines.push(`Site-specific notes:`);
+        lines.push(`  • ${notes.replace(/\n+/g, "\n  • ")}`);
+        lines.push(``);
+      }
+      lines.push(`Crew acknowledgment: reviewed hazards/controls and agrees to stop work if unsafe.`);
+
+      $("#briefOut").value = lines.join("\n");
+      $("#copyBriefBtn").disabled = false;
+      $("#saveBriefBtn").disabled = false;
+      toast("Briefing generated.");
+    });
+
+    $("#copyBriefBtn").addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText($("#briefOut").value);
+        toast("Copied.");
+      }catch{
+        toast("Copy failed (browser permission).");
+      }
+    });
+
+    $("#saveBriefBtn").addEventListener("click", () => {
+      const txt = $("#briefOut").value.trim();
+      if(!txt) return toast("Generate a briefing first.");
+      const firstLine = txt.split("\n").find(l => l.startsWith("Topic:")) || "Briefing";
+      const label = firstLine.replace("Topic:","").trim() || "Briefing";
+      state.briefings.unshift({ id: uid(), ts: Date.now(), label, text: txt });
+      state.briefings = state.briefings.slice(0, 30);
+      pushActivity("Briefing", `Saved: ${label}`);
+      saveState();
+      toast("Briefing saved.");
+    });
+
+    function renderBriefings(){
+      const list = $("#briefList");
+      list.innerHTML = "";
+      if(state.briefings.length === 0){
+        list.innerHTML = `<div class="hint">No briefings saved.</div>`;
+        return;
+      }
+      for(const b of state.briefings){
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="top">
+            <div>
+              <div class="title">${escapeHTML(b.label)}</div>
+              <div class="meta">${fmt(b.ts)}</div>
+            </div>
+            <div class="stack">
+              <button class="btn small" data-act="copy">Copy</button>
+              <button class="btn small" data-act="del">Delete</button>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <textarea class="mono" readonly style="min-height:120px">${b.text}</textarea>
+        `;
+        el.querySelector('[data-act="copy"]').addEventListener("click", async () => {
+          try{
+            await navigator.clipboard.writeText(b.text);
+            toast("Copied.");
+          }catch{
+            toast("Copy failed.");
+          }
+        });
+        el.querySelector('[data-act="del"]').addEventListener("click", () => {
+          if(!confirm("Delete this briefing?")) return;
+          state.briefings = state.briefings.filter(x => x.id !== b.id);
+          pushActivity("Briefing", "Deleted briefing");
+          saveState();
+          toast("Deleted.");
+        });
+        list.appendChild(el);
+      }
+    }
+
+    // ---------- Resources / Contacts ----------
+    const HAZARDS = [
+      { title:"Falls", tips:["Guardrails / covers","Tie-off / anchors","Safe ladder use","Dropped-object control"] },
+      { title:"Struck-by", tips:["Exclusion zones","Spotter with equipment","Secure loads","Controlled access"] },
+      { title:"Caught-in/between", tips:["Pinch points awareness","Hands clear; use tools","LOTO / isolate energy","Never bypass guards"] },
+      { title:"Electrical", tips:["GFCI & cord checks","Test-before-touch","LOTO","Keep panels closed"] },
+      { title:"Hot Work", tips:["Permit / fire watch","Remove combustibles","Extinguishers ready","Post-work monitoring"] },
+      { title:"Heat", tips:["Hydrate & breaks","Acclimatize","Buddy system","Know symptoms"] }
+    ];
+
+    function renderHazards(){
+      const wrap = $("#hazards");
+      wrap.innerHTML = "";
+      HAZARDS.forEach(h => {
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="top">
+            <div class="title">${escapeHTML(h.title)}</div>
+            <span class="badge">Quick tips</span>
+          </div>
+          <div class="sep"></div>
+          <ul class="hint" style="margin:0; padding-left:18px">
+            ${h.tips.map(t => `<li>${escapeHTML(t)}</li>`).join("")}
+          </ul>
+        `;
+        wrap.appendChild(el);
+      });
+    }
+
+    function renderContacts(){
+      $("#c1name").value = state.contacts.c1name || "";
+      $("#c1phone").value = state.contacts.c1phone || "";
+      $("#c2name").value = state.contacts.c2name || "";
+      $("#c2phone").value = state.contacts.c2phone || "";
+      $("#callPrimaryBtn").href = "tel:" + (state.contacts.c1phone || "");
+      $("#callSecondaryBtn").href = "tel:" + (state.contacts.c2phone || "");
+      $("#callPrimaryBtn").textContent = state.contacts.c1phone ? `Call Primary (${state.contacts.c1name || "Contact"})` : "Call Primary";
+      $("#callSecondaryBtn").textContent = state.contacts.c2phone ? `Call Secondary (${state.contacts.c2name || "Contact"})` : "Call Secondary";
+    }
+
+    $("#saveContactsBtn").addEventListener("click", () => {
+      state.contacts.c1name = $("#c1name").value.trim();
+      state.contacts.c1phone = $("#c1phone").value.trim();
+      state.contacts.c2name = $("#c2name").value.trim();
+      state.contacts.c2phone = $("#c2phone").value.trim();
+      pushActivity("Resources", "Saved contacts");
+      saveState();
+      toast("Contacts saved.");
+    });
+
+    // ---------- Snapshot / Activity ----------
+    function renderKPI(){
+      const total = state.checklist.length;
+      const done = state.checklist.filter(i => i.done).length;
+      const pct = total ? Math.round((done/total)*100) : 0;
+
+      const lastObs = state.observations[0]?.ts || 0;
+      const lastInc = state.incidents[0]?.ts || 0;
+
+      const k = [
+        { label:"Checklist completion", val:`${pct}%` },
+        { label:"Checklist items", val:`${total}` },
+        { label:"Observations saved", val:`${state.observations.length}` },
+        { label:"Incidents saved", val:`${state.incidents.length}` },
+      ];
+
+      const wrap = $("#kpi");
+      wrap.innerHTML = "";
+      k.forEach(x => {
+        const el = document.createElement("div");
+        el.className = "k";
+        el.innerHTML = `<div class="label">${x.label}</div><div class="val">${x.val}</div>`;
+        wrap.appendChild(el);
+      });
+
+      // small hint in header pill
+      const pill = document.createElement("div");
+      pill.className = "pill";
+      pill.style.marginTop = "10px";
+      pill.innerHTML = `🕒 Last save: <b style="color:var(--text); margin-left:6px">${state.activity[0] ? fmt(state.activity[0].ts) : "—"}</b>`;
+    }
+
+    function renderActivity(){
+      const list = $("#activityList");
+      list.innerHTML = "";
+      if(state.activity.length === 0){
+        list.innerHTML = `<div class="hint">No saved items yet. Start with the checklist.</div>`;
+        return;
+      }
+      for(const a of state.activity){
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="top">
+            <div>
+              <div class="title">${escapeHTML(a.kind)}</div>
+              <div class="meta">${escapeHTML(a.label)}<br>${fmt(a.ts)}</div>
+            </div>
+            <span class="badge">${escapeHTML(a.kind)}</span>
+          </div>
+        `;
+        list.appendChild(el);
+      }
+    }
+
+    // ---------- Export / Import / Clear ----------
+    $("#exportDataBtn").addEventListener("click", () => {
+      // WARNING: photos (base64) can bloat file; kept small via max size
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        app: "FieldSafe (vanilla)",
+        version: "v1",
+        data: state
+      };
+      dl(`fieldsafe-export-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(payload, null, 2));
+      toast("Exported.");
+    });
+
+    $("#importDataBtn").addEventListener("click", () => $("#importFile").click());
+
+    $("#importFile").addEventListener("change", async (e) => {
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      try{
+        const text = await f.text();
+        const obj = JSON.parse(text);
+        const incoming = obj.data ? obj.data : obj; // accept raw or wrapped
+        if(!incoming || typeof incoming !== "object") throw new Error("Bad file");
+        // merge with defaults
+        state = Object.assign(emptyState(), incoming);
+        pushActivity("System", "Imported data");
+        saveState();
+        toast("Imported.");
+      }catch(err){
+        console.warn(err);
+        toast("Import failed (invalid JSON).");
+      }finally{
+        e.target.value = "";
+      }
+    });
+
+    $("#clearAllBtn").addEventListener("click", () => {
+      if(!confirm("This will erase ALL FieldSafe data stored on this device. Continue?")) return;
+      localStorage.removeItem(KEY);
+      state = emptyState();
+      saveState();
+      toast("Cleared.");
+    });
+
+    // ---------- Stop Work ----------
+    $("#stopWorkBtn").addEventListener("click", () => {
+      const msg =
+        "STOP WORK AUTHORITY\n\n" +
+        "1) Pause the task.\n" +
+        "2) Control the hazard (barriers, de-energize, secure area).\n" +
+        "3) Notify supervision / safety per your project plan.\n\n" +
+        "This app does NOT notify anyone automatically.";
+      alert(msg);
+      pushActivity("Stop Work", "Viewed stop-work guidance");
+      saveState();
+    });
+
+    // ---------- Render All ----------
+    function renderAll(){
+      renderChecklist();
+      renderObservations();
+      renderIncidents();
+      renderBriefings();
+      renderHazards();
+      renderContacts();
+      renderKPI();
+      renderActivity();
+    }
+
+    // ---------- Helpers ----------
+    function escapeHTML(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function fileToDataURL(file){
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    // ---------- Boot ----------
+    // Bind profile fields to state on blur (nice UX on mobile)
+    ["siteName","crew","weather","shift"].forEach(id => {
+      $("#"+id).addEventListener("blur", () => {
+        state.profile.siteName = $("#siteName").value.trim();
+        state.profile.crew = $("#crew").value.trim();
+        state.profile.weather = $("#weather").value.trim();
+        state.profile.shift = $("#shift").value;
+        saveState();
+      });
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
